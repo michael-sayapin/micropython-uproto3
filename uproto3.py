@@ -76,6 +76,18 @@ def encode_varint(value):
             break
     return bytes(data)
 
+def encode_fixed(n, fmt='<f'):
+    return struct.pack(fmt, n)
+
+def decode_fixed(n, fmt='<f'):
+    return struct.unpack(fmt, n)[0]
+
+def encode_zig_zag(n, bits=32):
+    return (n << 1) ^ (n >> (bits - 1))
+
+def decode_zig_zag(n):
+    return (n >> 1) ^ -(n & 1)
+
 
 WireType = UEnum(Invalid=-1, Varint=0, Bit64=1, Length=2, Bit32=5)
 FieldType = UEnum(Invalid=-1, Optional=1, Required=2, Repeated=3)
@@ -122,14 +134,6 @@ class VarType(object):
     def __repr__(self):
         return '{}({}: {})'.format(self.__class__.__name__, self._tag, self._value)
 
-    @staticmethod
-    def encode_zig_zag(n, bits=32):
-        return (n << 1) ^ (n >> (bits - 1))
-
-    @staticmethod
-    def decode_zig_zag(n):
-        return (n >> 1) ^ -(n & 1)
-
 
 VarintSubType = UEnum(
     Int32=1,
@@ -172,7 +176,7 @@ class Varint(VarType):
             for i, d in enumerate(self._data):
                 value |= (d & 0x7f) << (i * 7)
             if self._sub_type in (VarintSubType.SInt32, VarintSubType.SInt64):
-                value = self.decode_zig_zag(value)
+                value = decode_zig_zag(value)
             elif self._sub_type == VarintSubType.Bool:
                 value = bool(value)
             self._value = value
@@ -195,7 +199,7 @@ class Varint(VarType):
             if not x:
                 continue
             if self._sub_type in (VarintSubType.SInt32, VarintSubType.SInt64):
-                x = self.encode_zig_zag(x, 32 if self._sub_type == VarintSubType.SInt32 else 64)
+                x = encode_zig_zag(x, 32 if self._sub_type == VarintSubType.SInt32 else 64)
             if self._sub_type == VarintSubType.Bool:
                 _data += bytes([int(x)])
             else:
@@ -309,7 +313,7 @@ class Fixed(VarType):
 
     def parse_data(self, data):
         self._data = data
-        value = self.decode_fixed(self._data, self._fmt)
+        value = decode_fixed(self._data, self._fmt)
         if self._field_type == FieldType.Repeated:
             self._value.append(value)
         else:
@@ -323,16 +327,8 @@ class Fixed(VarType):
             self._data = b''
             return self._data
         data = bytes(get_header_for_tag(self._tag, self.get_type()))
-        self._data = data + self.encode_fixed(self._value, self._fmt)
+        self._data = data + encode_fixed(self._value, self._fmt)
         return self._data
-
-    @staticmethod
-    def encode_fixed(n, fmt='<f'):
-        return struct.pack(fmt, n)
-
-    @staticmethod
-    def decode_fixed(n, fmt='<f'):
-        return struct.unpack(fmt, n)[0]
 
 
 @register_message('uproto3.Message')
