@@ -378,6 +378,8 @@ class Message:
 
     @staticmethod
     def __set(name, instance, value):
+        if name not in instance._fields:
+            return
         if instance._fields[name]._oneof:
             # reset other fields
             for k in instance._fields:
