@@ -2,6 +2,8 @@
 
 ## Project Status
 
+Based on https://github.com/jazzycamel/micropython-uprotobuf/
+
 This project is very much a work in progress and, as such, is incomplete. It only targets compatibility with proto3, and drops support for many proto2-specific features (optional/required, defaults).
 
 ### FIXME
@@ -48,7 +50,7 @@ message TestMessage {
 then a MicroPython compatible module can be created using the uproto3 plugin as follows:
 
 ```sh
-$ git clone https://github.com/michael_sayapin/micropython-uproto3.git
+$ git clone https://github.com/michael-sayapin/micropython-uproto3.git
 $ cd micropython-uproto3
 $ chmod +x uproto3_plugin.py
 $ protoc --plugin=protoc-gen-custom=uproto3_plugin.py --custom_out=. test.proto
