@@ -12,14 +12,14 @@ import logging
 def traverse(proto_file):
     def _traverse(package, items):
         for item in items:
-            yield item, package
             if isinstance(item, DescriptorProto):
-                for e in item.enum_type:
-                    yield e, package
                 for nested in item.nested_type:
                     nested_package = package + item.name
                     for nested_item in _traverse(nested, nested_package):
                         yield nested_item, nested_package
+                for e in item.enum_type:
+                    yield e, package
+            yield item, package
     return chain(
         _traverse(proto_file.package, proto_file.enum_type),
         _traverse(proto_file.package, proto_file.message_type),
@@ -64,19 +64,17 @@ def generate_code(request, response):
         files = list(traverse(proto_file))
 
         for item, package in files:
-            # first, process all enums
+
+            # we do not need non-package protos
+            if not package:
+                continue
+
             if isinstance(item, EnumDescriptorProto):
                 enums[item.name] = ''
                 enums[item.name] += "\n    {} = UEnum(\n".format(item.name)
                 for value in item.value:
                     enums[item.name] += '        {}={},\n'.format(value.name, value.number)
                 enums[item.name] += "    )\n"
-
-        for item, package in files:
-
-            # we do not need non-package protos
-            if not package:
-                continue
 
             oneofs = []
             if hasattr(item, 'oneof_decl') and item.oneof_decl:
