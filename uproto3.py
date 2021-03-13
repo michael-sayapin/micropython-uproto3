@@ -254,7 +254,7 @@ class Length(VarType):
         if not self._value:
             self._data = bytes(data)
             return self._data
-        if hasattr(self, '_submessage_type'):
+        if hasattr(self, '_submessage_type') and self._submessage_type:
             if isinstance(self._value, list) and self._field_type == FieldType.Repeated:
                 for submessage in self._value:
                     data += get_header_for_tag(self._tag, WireType.Length)
