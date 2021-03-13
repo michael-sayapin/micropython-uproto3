@@ -114,7 +114,7 @@ def generate_code(request, response):
 
         imports = sorted(list(set(imports)))
         for package in imports:
-            output += "import {}_upb3\n".format(package)
+            output += "from . import {}_upb3\n".format(package)
 
         output += fields
         f = response.file.add()
